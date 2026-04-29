@@ -41,7 +41,16 @@ Docker per task: Python 3.11, git, pytest, tox, 4GB RAM, no network except PyPI.
 
 ### MCP server: `repo-context-mcp`
 
-Custom server backed by `tree-sitter`/`jedi`. Tools: `find_definition`, `find_usages`, `list_recent_commits`, `get_test_for_function`.
+Custom server. Tools and backends:
+
+| Tool | Backend |
+|---|---|
+| `find_definition` | jedi |
+| `find_usages` | jedi |
+| `get_test_for_function` | tree-sitter |
+| `list_recent_commits` | git log |
+
+Reproducer + Generator only. Evaluator excluded.
 
 ### Logging
 
@@ -50,7 +59,7 @@ Every tool call, model call, token count, and cost → structured JSON trace per
 ## Cost constraints
 
 - **Total budget: $200.** Hard budget alerts at $50/$100/$150.
-- Prompt caching **mandatory** on system prompts and any repo file loaded >1x. Target: 40-60% Generator cost reduction.
+- Prompt caching **mandatory** on system prompts and all repo files unconditionally. Target: 40-60% Generator cost reduction.
 - Opus 4.7 reserved for hard cases only.
 - Generator forbidden from modifying pre-existing tests (may add new ones).
 
@@ -77,3 +86,8 @@ Every tool call, model call, token count, and cost → structured JSON trace per
 - Don't claim a task is complete without running `pytest` and pasting the output.
 - Don't write comments that restate the code; explain _why_, not _what_.
 - Don't import heavy ML libraries (torch, transformers) — this project uses the Anthropic API only.
+
+## References
+
+- [`CONTEXT.md`](CONTEXT.md) — canonical glossary, resolved decisions, all artifact schemas
+- [`docs/adr/`](docs/adr/) — architecture decision records
