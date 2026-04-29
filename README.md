@@ -16,7 +16,7 @@ Three agents communicate via structured JSON artifacts on disk:
 
 Generator is bounded by a 50-call tool cap and 15-minute wall-clock timeout. Evaluator can reject and feed structured feedback back to Generator (max 3 rounds). Before any code changes, Generator proposes its approach and Evaluator must approve (sprint-contract negotiation).
 
-Each task runs in an isolated Docker container (Python 3.11, no network except PyPI). A custom MCP server (`repo-context-mcp`) provides code-navigation tools backed by `tree-sitter`.
+Each task runs in an isolated Docker container (Python 3.11, no network except PyPI). The orchestrator manages the container lifecycle; agents run outside via `docker exec`. The container is reused across retry rounds so Generator can build on partial work. A custom MCP server (`repo-context-mcp`) provides code-navigation tools backed by jedi (definitions/usages), tree-sitter (test lookup), and git (commits).
 
 ## Usage
 
@@ -41,6 +41,11 @@ Requires Docker. Set `ANTHROPIC_API_KEY` in your environment.
 | dev      | 10  | SWE-bench Verified (pinned commits)  |
 | custom   | 15  | Real OSS bugs not in SWE-bench       |
 | swebench | 30  | SWE-bench Verified stratified sample |
+
+## Architecture docs
+
+- [`CONTEXT.md`](CONTEXT.md) — canonical glossary, resolved decisions, artifact schemas
+- [`docs/adr/`](docs/adr/) — architecture decision records
 
 ## Results
 
