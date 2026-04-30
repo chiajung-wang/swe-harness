@@ -8,6 +8,7 @@
 
 - `src/swe_harness/models.py` — Pydantic v2 models (`FixContract`, `SprintContract`, `Verdict`, `TraceEntry`, `RunRecord`)
 - `src/swe_harness/budget.py` — spend accumulator, threshold warnings ($50/$100/$150), hard-kill at limit
+- `src/swe_harness/tracer.py` — append-only NDJSON trace writer; `entry_from_usage()` maps Anthropic `Usage` → `TraceEntry`
 
 ## Commands
 
