@@ -1,6 +1,6 @@
 # swe-harness
 
-> **Status: In development** — data models, budget accumulator, trace writer, Docker sandbox, agent base class, and Generator agent implemented; orchestrator, Reproducer/Evaluator agents, and MCP server pending
+> **Status: In development** — data models, budget accumulator, trace writer, Docker sandbox, agent base class, Generator agent, SQLite persistence, orchestrator, and CLI implemented; Reproducer/Evaluator agents and MCP server pending
 
 Multi-agent harness for autonomous Python bug-fixing. Takes a GitHub issue, produces a PR with a fix and regression test.
 
@@ -21,7 +21,7 @@ Each task runs in an isolated Docker container (Python 3.11, no network except P
 ## Usage
 
 ```bash
-swe-harness run <issue-url>      # end-to-end fix attempt
+swe-harness run <issue-url> --fix-contract <path>  # end-to-end fix attempt
 swe-harness eval <set>           # run eval set: dev | custom | swebench
 swe-harness traces show <run-id> # inspect structured trace
 ```

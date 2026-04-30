@@ -12,6 +12,9 @@
 - `src/swe_harness/docker_manager.py` — container lifecycle: start/exec/stop; shell-injection-safe; integration-tested
 - `src/swe_harness/agents/base.py` — `AnthropicAgent` base: Anthropic client, `_build_cache_block()`, instrumented `_call()` (logs `TraceEntry`, charges `Budget`)
 - `src/swe_harness/agents/generator.py` — `Generator` (Haiku 4.5): agentic loop with read/write/run tools, 50-call cap, 15-min timeout, stall detection, test-guard with traversal-safe path normalization
+- `src/swe_harness/db.py` — `init_db()` creates SQLite `runs` table; `upsert_run(record)` inserts or replaces by `run_id`
+- `src/swe_harness/orchestrator.py` — `run(issue_url, fix_contract, config)`: creates `runs/<ts>-<slug>/`, starts Docker, runs Generator, writes `RunRecord` to SQLite, tears down on all exit paths; catches `BudgetExceeded`
+- `src/swe_harness/cli.py` — `swe-harness run <issue-url> --fix-contract <path> [--config solo]` with Rich progress output
 
 ## Commands
 
