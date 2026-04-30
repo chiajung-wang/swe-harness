@@ -1,6 +1,6 @@
 # swe-harness
 
-> **Status: In development** — core data models implemented; orchestrator, agents, and MCP server pending
+> **Status: In development** — data models and budget accumulator implemented; orchestrator, agents, and MCP server pending
 
 Multi-agent harness for autonomous Python bug-fixing. Takes a GitHub issue, produces a PR with a fix and regression test.
 

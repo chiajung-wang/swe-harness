@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Implemented
 
 - `src/swe_harness/models.py` — Pydantic v2 models for all artifact schemas (`FixContract`, `SprintContract`, `Verdict`, `TraceEntry`, `RunRecord`)
+- `src/swe_harness/budget.py` — spend accumulator with threshold warnings ($50/$100/$150) and hard-kill (`BudgetExceeded`) at limit
 
 ## CLI surface (target)
 
