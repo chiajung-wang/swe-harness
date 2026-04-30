@@ -4,13 +4,13 @@ Implement `src/swe_harness/agents/base.py` — shared base class for all three a
 
 ## Acceptance criteria
 
-- [ ] `AnthropicAgent(tracer: Tracer, budget: Budget)` initializes `anthropic.Anthropic()` client
-- [ ] `_build_cache_block(content: str) -> dict` wraps text as `{"type":"text","text":...,"cache_control":{"type":"ephemeral"}}`
-- [ ] `_call(system, messages, tools)` calls the Anthropic API, logs a `TraceEntry`, and calls `budget.charge(cost)`
-- [ ] `_call()` surfaces API errors — no swallowing
-- [ ] Unit test: mock Anthropic client, assert `TraceEntry` logged and budget charged after `_call()`
-- [ ] `uv run pytest` passes
-- [ ] `uv run mypy src/` passes (strict)
+- [x] `AnthropicAgent(tracer: Tracer, budget: Budget)` initializes `anthropic.Anthropic()` client
+- [x] `_build_cache_block(content: str) -> dict` wraps text as `{"type":"text","text":...,"cache_control":{"type":"ephemeral"}}`
+- [x] `_call(system, messages, tools)` calls the Anthropic API, logs a `TraceEntry`, and calls `budget.charge(cost)`
+- [x] `_call()` surfaces API errors — no swallowing
+- [x] Unit test: mock Anthropic client, assert `TraceEntry` logged and budget charged after `_call()`
+- [x] `uv run pytest` passes
+- [x] `uv run mypy src/` passes (strict)
 
 ## Blocked by
 
