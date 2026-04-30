@@ -11,6 +11,7 @@
 - `src/swe_harness/tracer.py` — append-only NDJSON trace writer; `entry_from_usage()` maps Anthropic `Usage` → `TraceEntry`
 - `src/swe_harness/docker_manager.py` — container lifecycle: start/exec/stop; shell-injection-safe; integration-tested
 - `src/swe_harness/agents/base.py` — `AnthropicAgent` base: Anthropic client, `_build_cache_block()`, instrumented `_call()` (logs `TraceEntry`, charges `Budget`)
+- `src/swe_harness/agents/generator.py` — `Generator` (Haiku 4.5): agentic loop with read/write/run tools, 50-call cap, 15-min timeout, stall detection, test-guard with traversal-safe path normalization
 
 ## Commands
 
