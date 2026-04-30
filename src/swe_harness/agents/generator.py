@@ -4,7 +4,7 @@ import base64
 import json
 import time
 from collections import deque
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock, ToolUnionParam
 
@@ -127,6 +127,9 @@ class Generator(AnthropicAgent):
                     f"No tool execution in {_IDLE_S}s — loop is idle"
                 )
 
+            # Reset before the API call so slow repos don't falsely trigger
+            # the idle check on the next iteration.
+            last_tool_exec = time.monotonic()
             response = self._call(system=system, messages=messages, tools=_TOOLS)
             messages.append({"role": "assistant", "content": response.content})
 
@@ -162,7 +165,6 @@ class Generator(AnthropicAgent):
                 )
 
             messages.append({"role": "user", "content": tool_results})
-            last_tool_exec = time.monotonic()
             tool_call_count += len(tool_uses)
 
             if tool_call_count >= _TOOL_CAP:
@@ -194,8 +196,16 @@ class Generator(AnthropicAgent):
         return f"Unknown tool: {name}"
 
     def _tool_read_file(self, path: str) -> str:
+        # Encode path as base64 — prevents shell injection from model-generated paths.
+        path_b64 = base64.b64encode(path.encode()).decode("ascii")
+        cmd = (
+            "python3 -c \""
+            "import base64, sys; "
+            f"p='/repo/'+base64.b64decode('{path_b64}').decode(); "
+            "sys.stdout.write(open(p).read())\""
+        )
         try:
-            stdout, _ = self._docker.exec(f"cat /repo/{path}")
+            stdout, _ = self._docker.exec(cmd)
             return stdout
         except CommandError as e:
             return f"Error reading {path}: {e}"
@@ -203,7 +213,8 @@ class Generator(AnthropicAgent):
     def _tool_write_file(
         self, path: str, content: str, patch_counts: dict[str, int]
     ) -> str:
-        if path.startswith("tests/") or path == "tests":
+        # Normalize to catch traversal variants like ../tests/test_foo.py.
+        if any(part == "tests" for part in PurePosixPath(path).parts):
             return f"Error: Generator may not modify test files: {path}"
 
         patch_counts[path] = patch_counts.get(path, 0) + 1
@@ -233,7 +244,7 @@ class Generator(AnthropicAgent):
         try:
             stdout, stderr = self._docker.exec(command)
             out = stdout + (f"\nstderr: {stderr}" if stderr.strip() else "")
-            return out or "(no output)"
+            return out if out.strip() else "(no output)"
         except CommandError as e:
             return f"Exit {e.exit_code}:\n{e.stdout}\n{e.stderr}"
 

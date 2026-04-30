@@ -54,12 +54,9 @@ def _make_generator(tmp_path: Path) -> tuple[Generator, MagicMock, MagicMock]:
 
 
 def _tool_use_block(name: str, inputs: dict[str, object], id: str = "tu_001") -> MagicMock:
-    block = MagicMock()
+    from anthropic.types import ToolUseBlock
+    block = MagicMock(spec=ToolUseBlock)
     block.type = "tool_use"
-    # isinstance check in generator uses ToolUseBlock; patch to satisfy isinstance
-    block.__class__ = __import__(
-        "anthropic.types", fromlist=["ToolUseBlock"]
-    ).ToolUseBlock
     block.name = name
     block.input = inputs
     block.id = id
@@ -210,3 +207,46 @@ def test_write_file_blocked_for_tests_dir(tmp_path: Path) -> None:
 
     # Blocked write never sent to Docker; only repro check exec called
     assert docker.exec.call_count == 1
+
+
+def test_write_file_blocked_for_traversal_path(tmp_path: Path) -> None:
+    gen, docker, client = _make_generator(tmp_path)
+
+    # ../tests/ traversal bypasses naive startswith("tests/") check
+    write_traversal = _tool_use_block(
+        "write_file", {"path": "../tests/test_foo.py", "content": "x"}
+    )
+    text_done = _text_block()
+    client.messages.create.side_effect = [
+        _model_response([write_traversal]),
+        _model_response([text_done], "end_turn"),
+    ]
+    docker.exec.return_value = ("", "")
+
+    gen.run()
+
+    assert docker.exec.call_count == 1  # only repro check, no write
+
+
+def test_stall_idle_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    gen, docker, client = _make_generator(tmp_path)
+
+    # First call: time is normal (T=0 init, T=0.1 reset before _call)
+    # Second iteration: idle check sees T=200 - T=0.1 > 60s → stall
+    call_count = 0
+
+    def fake_monotonic() -> float:
+        nonlocal call_count
+        call_count += 1
+        # Returns: init=0, first idle-check=0, first pre-call reset=0.1,
+        # second idle-check=200 (triggers stall)
+        return [0.0, 0.0, 0.1, 200.0][min(call_count - 1, 3)]
+
+    monkeypatch.setattr("swe_harness.agents.generator.time.monotonic", fake_monotonic)
+
+    read_call = _tool_use_block("read_file", {"path": "f"})
+    client.messages.create.return_value = _model_response([read_call])
+    docker.exec.return_value = ("content", "")
+
+    with pytest.raises(StallDetected, match="idle"):
+        gen.run()
