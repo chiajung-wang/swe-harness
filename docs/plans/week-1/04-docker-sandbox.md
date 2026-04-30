@@ -4,15 +4,15 @@ Implement `src/swe_harness/docker_manager.py` — container lifecycle manager. S
 
 ## Acceptance criteria
 
-- [ ] `DockerManager` with `start(repo_url: str, commit: str) -> str` (returns container ID)
-- [ ] `start()` clones repo at `commit` into `/repo` inside container
-- [ ] Container spec: Python 3.11, git, pytest, tox, 4 GB RAM limit, no network except PyPI
-- [ ] `exec(cmd: str) -> tuple[str, str]` returns `(stdout, stderr)`; raises on non-zero exit
-- [ ] `stop()` removes container; idempotent if already stopped
-- [ ] Container instance reused across multiple `exec()` calls (not re-created per call)
-- [ ] Integration test (skipped if Docker unavailable): start → exec `python --version` → stop
-- [ ] `uv run pytest` passes
-- [ ] `uv run mypy src/` passes (strict)
+- [x] `DockerManager` with `start(repo_url: str, commit: str) -> str` (returns container ID)
+- [x] `start()` clones repo at `commit` into `/repo` inside container
+- [x] Container spec: Python 3.11, git, pytest, tox, 4 GB RAM limit, no network except PyPI
+- [x] `exec(cmd: str) -> tuple[str, str]` returns `(stdout, stderr)`; raises on non-zero exit
+- [x] `stop()` removes container; idempotent if already stopped
+- [x] Container instance reused across multiple `exec()` calls (not re-created per call)
+- [x] Integration test (skipped if Docker unavailable): start → exec `python --version` → stop
+- [x] `uv run pytest` passes
+- [x] `uv run mypy src/` passes (strict)
 
 ## Blocked by
 
