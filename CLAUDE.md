@@ -95,3 +95,4 @@ Every tool call, model call, token count, and cost → structured JSON trace per
 
 - [`CONTEXT.md`](CONTEXT.md) — canonical glossary, resolved decisions, all artifact schemas
 - [`docs/adr/`](docs/adr/) — architecture decision records
+- [`docs/plans/PLAN.md`](docs/plans/PLAN.md) — implementation plan
