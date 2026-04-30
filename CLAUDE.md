@@ -6,7 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `swe-harness` — multi-agent Python harness for autonomous bug-fixing. Takes a GitHub issue, produces a PR with fix + regression test. Three agents: Reproducer → Generator → Evaluator.
 
-**Status:** Pre-implementation. See `prd.md` for full spec.
+**Status:** Early implementation. Core data models done. See `prd.md` for full spec.
+
+### Implemented
+
+- `src/swe_harness/models.py` — Pydantic v2 models for all artifact schemas (`FixContract`, `SprintContract`, `Verdict`, `TraceEntry`, `RunRecord`)
 
 ## CLI surface (target)
 
