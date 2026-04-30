@@ -1,96 +1,51 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project
 
-`swe-harness` — multi-agent Python harness for autonomous bug-fixing. Takes a GitHub issue, produces a PR with fix + regression test. Three agents: Reproducer → Generator → Evaluator.
-
-**Status:** Early implementation. Core data models done. See `prd.md` for full spec.
+`swe-harness` — multi-agent Python harness: GitHub issue → PR with fix + regression test. See `CONTEXT.md` for full architecture, artifact schemas, and glossary.
 
 ### Implemented
 
-- `src/swe_harness/models.py` — Pydantic v2 models for all artifact schemas (`FixContract`, `SprintContract`, `Verdict`, `TraceEntry`, `RunRecord`)
-- `src/swe_harness/budget.py` — spend accumulator with threshold warnings ($50/$100/$150) and hard-kill (`BudgetExceeded`) at limit
+- `src/swe_harness/models.py` — Pydantic v2 models (`FixContract`, `SprintContract`, `Verdict`, `TraceEntry`, `RunRecord`)
+- `src/swe_harness/budget.py` — spend accumulator, threshold warnings ($50/$100/$150), hard-kill at limit
 
-## CLI surface (target)
+## Commands
 
 ```bash
-swe-harness run <issue-url>       # end-to-end run
-swe-harness eval <set>            # run an eval set (dev|custom|swebench)
-swe-harness traces show <run-id>  # inspect structured trace
+uv run pytest       # run tests
+uv run mypy src/    # type-check (strict)
+uv sync             # install deps
 ```
-
-## Architecture
-
-### Agent roles
-
-| Agent      | Model                            | Role                                                          |
-| ---------- | -------------------------------- | ------------------------------------------------------------- |
-| Reproducer | Sonnet 4.6                       | Reads issue → writes failing test → emits `fix_contract.json` |
-| Generator  | Haiku 4.5 (Sonnet for SWE-bench) | Receives contract → edits code → iterates until test passes   |
-| Evaluator  | Sonnet 4.6                       | Runs full suite → checks for hacks → emits `verdict.json`     |
-
-- Generator bounded: 50 tool-call cap, 15-min wall-clock timeout.
-- Evaluator can reject and feed structured feedback back to Generator (max 3 retry rounds).
-- Sprint-contract negotiation: Generator proposes approach; Evaluator approves before any code changes (2 rounds max).
-
-### Artifacts (disk-based handoffs)
-
-- `fix_contract.json` — failing test path, expected behavior, likely-affected files, repro command
-- `verdict.json` — pass/fail, regression flags, hack-detection results, structured feedback
-
-### Sandboxing
-
-Docker per task: Python 3.11, git, pytest, tox, 4GB RAM, no network except PyPI. Repo at `/repo`.
-
-### MCP server: `repo-context-mcp`
-
-Custom server. Tools and backends:
-
-| Tool | Backend |
-|---|---|
-| `find_definition` | jedi |
-| `find_usages` | jedi |
-| `get_test_for_function` | tree-sitter |
-| `list_recent_commits` | git log |
-
-Reproducer + Generator only. Evaluator excluded.
-
-### Logging
-
-Every tool call, model call, token count, and cost → structured JSON trace per run. SQLite for aggregated eval results.
 
 ## Cost constraints
 
-- **Total budget: $200.** Hard budget alerts at $50/$100/$150.
-- Prompt caching **mandatory** on system prompts and all repo files unconditionally. Target: 40-60% Generator cost reduction.
+- **Hard budget: $200.** Warn at $50/$100/$150 (log warnings, not exceptions).
+- Prompt caching mandatory on all system prompts and repo files.
 - Opus 4.7 reserved for hard cases only.
-- Generator forbidden from modifying pre-existing tests (may add new ones).
 
-## Eval sets
+## Before coding
 
-- `dev` — 10 SWE-bench Verified bugs, pinned commits (weeks 1-3 iteration)
-- `custom` — 15 real OSS bugs not in SWE-bench, graded against gold patches
-- `swebench` — 30-instance stratified SWE-bench Verified sample, official Docker grading
+- State assumptions explicitly. If uncertain, ask — don't pick silently.
+- If multiple interpretations exist, present them.
+- For multi-step tasks, write a brief plan with verifiable success criteria before starting.
 
-## Key constraints from PRD
+## Coding discipline
 
-- Python only (v1 non-goal: other languages)
-- No web UI, no fine-tuning, no real-time dashboards
-- Evaluator must NOT see the gold patch during grading
-- Generator forbidden from modifying pre-existing tests
-- Each PR to OSS must disclose agent provenance honestly
+- Minimum code that solves the problem. No speculative features, abstractions, or configurability.
+- Touch only what you must. Match existing style; don't improve adjacent code.
+- Remove imports/variables YOUR changes made unused. Leave pre-existing dead code alone — mention it instead.
+- Every changed line must trace to the request.
 
 ## Don't
 
-- Don't modify or delete tests in /eval/datasets/\* — these are pinned ground truth.
+- Don't modify or delete tests in `/eval/datasets/` — pinned ground truth.
 - Don't add new top-level dependencies without flagging in your response.
-- Don't catch and swallow exceptions; surface them or re-raise with context.
-- Don't expand scope beyond the requested change; no "while I'm here" refactors.
+- Don't catch and swallow exceptions; surface or re-raise with context.
 - Don't claim a task is complete without running `pytest` and pasting the output.
 - Don't write comments that restate the code; explain _why_, not _what_.
-- Don't import heavy ML libraries (torch, transformers) — this project uses the Anthropic API only.
+- Don't import heavy ML libraries (torch, transformers) — Anthropic API only.
+- Generator must not modify pre-existing tests (may add new ones).
+- Evaluator must not see the gold patch during grading.
 
 ## References
 
