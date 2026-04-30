@@ -68,7 +68,7 @@ def make_trace_entry(**overrides: Any) -> TraceEntry:
         "run_id": "20240101-000000-repo-1",
         "agent": "generator",
         "event": "tool_call",
-        "model": None,
+        "model": "",
         "tool": "bash",
         "input_tokens": 100,
         "output_tokens": 50,
@@ -90,6 +90,22 @@ def test_trace_entry_rejects_invalid_event() -> None:
         make_trace_entry(event="unknown_event")
 
 
+def test_trace_entry_artifact_written_defaults() -> None:
+    entry = TraceEntry(
+        ts="2024-01-01T00:00:00Z",
+        run_id="20240101-000000-repo-1",
+        agent="reproducer",
+        event="artifact_written",
+    )
+    assert entry.model == ""
+    assert entry.tool == ""
+    assert entry.input_tokens == 0
+    assert entry.output_tokens == 0
+    assert entry.cache_read_tokens == 0
+    assert entry.cost_usd == 0.0
+    assert entry.duration_ms == 0
+
+
 def test_run_record_round_trip() -> None:
     record = RunRecord(
         run_id="20240101-000000-repo-1",
@@ -102,3 +118,17 @@ def test_run_record_round_trip() -> None:
         ts="2024-01-01T00:00:00Z",
     )
     assert RunRecord.model_validate_json(record.model_dump_json()) == record
+
+
+def test_run_record_rejects_invalid_verdict() -> None:
+    with pytest.raises(ValidationError):
+        RunRecord(
+            run_id="20240101-000000-repo-1",
+            issue_url="https://github.com/org/repo/issues/1",
+            config="solo",
+            verdict="maybe",
+            rounds=1,
+            cost_usd=0.05,
+            duration_s=42.0,
+            ts="2024-01-01T00:00:00Z",
+        )

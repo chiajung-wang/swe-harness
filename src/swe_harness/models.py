@@ -37,20 +37,20 @@ class TraceEntry(BaseModel):
     run_id: str
     agent: str
     event: Literal["tool_call", "model_call", "artifact_written"]
-    model: str | None
-    tool: str | None
-    input_tokens: int
-    output_tokens: int
-    cache_read_tokens: int
-    cost_usd: float
-    duration_ms: int
+    model: str = ""
+    tool: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cost_usd: float = 0.0
+    duration_ms: int = 0
 
 
 class RunRecord(BaseModel):
     run_id: str
     issue_url: str
     config: Literal["solo", "two_agent", "three_agent", "full"]
-    verdict: str | None
+    verdict: Literal["pass", "fail"] | None
     rounds: int
     cost_usd: float
     duration_s: float
