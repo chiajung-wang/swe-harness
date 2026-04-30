@@ -3,13 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 
 from swe_harness.models import RunRecord
 
 _DEFAULT_DB = Path("runs") / "harness.db"
 
 
-def _engine(db_path: Path):  # type: ignore[no-untyped-def]
+def _engine(db_path: Path) -> Engine:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     return create_engine(f"sqlite:///{db_path}", future=True)
 

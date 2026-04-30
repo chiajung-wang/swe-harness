@@ -53,12 +53,16 @@ def run_cmd(issue_url: str, fix_contract_path: Path, config: str) -> None:
         expand=False,
     ))
 
-    with console.status("[bold green]Running…[/bold green]", spinner="dots"):
-        record = orchestrator.run(
-            issue_url=issue_url,
-            fix_contract=fix_contract,
-            config=config,  # type: ignore[arg-type]
-        )
+    try:
+        with console.status("[bold green]Running…[/bold green]", spinner="dots"):
+            record = orchestrator.run(
+                issue_url=issue_url,
+                fix_contract=fix_contract,
+                config=config,  # type: ignore[arg-type]
+            )
+    except (ValueError, Exception) as exc:
+        console.print(f"[red]Run failed:[/red] {exc}")
+        sys.exit(1)
 
     verdict_style = "green" if record.verdict == "pass" else "yellow" if record.verdict is None else "red"
     console.print(Panel(
