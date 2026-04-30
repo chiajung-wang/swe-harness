@@ -75,6 +75,9 @@ def test_call_propagates_api_error(tmp_path: Path) -> None:
     with pytest.raises(sdk.APIConnectionError):
         agent._call(system="s", messages=[])
 
+    # API error fires before tracer.log — trace file must remain empty
+    assert (tmp_path / "run" / "trace.ndjson").read_text(encoding="utf-8") == ""
+
 
 def test_call_propagates_budget_exceeded(tmp_path: Path) -> None:
     agent = _make_agent(tmp_path, limit_usd=0.000001)
@@ -83,6 +86,20 @@ def test_call_propagates_budget_exceeded(tmp_path: Path) -> None:
 
     with pytest.raises(BudgetExceeded):
         agent._call(system="s", messages=[])
+
+
+def test_call_cache_read_none_treated_as_zero(tmp_path: Path) -> None:
+    # SDK may return None for cache_read_input_tokens on non-cached calls
+    agent = _make_agent(tmp_path)
+    agent._client = MagicMock()
+    agent._client.messages.create.return_value = _mock_response(100, 50, cache_read=None)
+
+    agent._call(system="s", messages=[])
+
+    entry = TraceEntry.model_validate_json(
+        (tmp_path / "run" / "trace.ndjson").read_text(encoding="utf-8").strip()
+    )
+    assert entry.cache_read_tokens == 0
 
 
 def test_build_cache_block(tmp_path: Path) -> None:

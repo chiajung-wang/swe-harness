@@ -72,6 +72,9 @@ class AnthropicAgent:
         )
         cost = _cost_usd(self._model, usage.input_tokens, usage.output_tokens, cache_read)
 
+        # Trace before charging: the API call completed and tokens were consumed
+        # by Anthropic, so the trace entry is valid even if budget.charge()
+        # raises BudgetExceeded immediately after.
         self._tracer.log(
             entry_from_usage(
                 run_id=self._run_id,
