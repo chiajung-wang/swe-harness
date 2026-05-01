@@ -1,0 +1,10 @@
+{
+  "issue_url": "https://github.com/chiajung-wang/swe-harness/issues/1",
+  "repo_commit": "b306f43c303db6c3dc1712f21b4e44a5d263e688",
+  "failing_test": "tests/test_budget.py::test_charge_raises_budget_exceeded",
+  "repro_command": "pip install -e . -q && pytest tests/test_budget.py::test_charge_raises_budget_exceeded -x",
+  "expected_behavior": "BudgetExceeded raised when spend equals the limit",
+  "likely_affected_files": ["src/swe_harness/budget.py"],
+  "error_output": "FAILED tests/test_budget.py::test_charge_raises_budget_exceeded - Failed: DID NOT RAISE <class 'swe_harness.budget.BudgetExceeded'>",
+  "reproducer_confidence": "high"
+}
