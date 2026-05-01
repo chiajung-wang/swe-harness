@@ -35,5 +35,5 @@ class Budget:
                     threshold,
                     self.limit_usd,
                 )
-        if self._spent >= self.limit_usd:
+        if self._spent > self.limit_usd:
             raise BudgetExceeded(spent=self._spent, limit=self.limit_usd)
