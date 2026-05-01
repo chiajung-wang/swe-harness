@@ -70,6 +70,12 @@ def test_spent_updated_before_raise() -> None:
     assert b.spent == pytest.approx(11.0)
 
 
+def test_charge_raises_budget_exceeded() -> None:
+    b = Budget(limit_usd=1.0)
+    with pytest.raises(BudgetExceeded):
+        b.charge(1.0)  # spend == limit should raise
+
+
 def test_charge_rejects_negative_cost() -> None:
     b = Budget(limit_usd=200.0)
     with pytest.raises(ValueError):
