@@ -1,17 +1,26 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
 
 import click
 from rich.console import Console
+from rich.logging import RichHandler
 from rich.panel import Panel
 
 from swe_harness import orchestrator
 from swe_harness.models import FixContract
 
 console = Console()
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(console=console, show_path=False)],
+)
 
 
 @click.group()
@@ -54,12 +63,12 @@ def run_cmd(issue_url: str, fix_contract_path: Path, config: str) -> None:
     ))
 
     try:
-        with console.status("[bold green]Running…[/bold green]", spinner="dots"):
-            record = orchestrator.run(
-                issue_url=issue_url,
-                fix_contract=fix_contract,
-                config=config,  # type: ignore[arg-type]
-            )
+        record = orchestrator.run(
+            issue_url=issue_url,
+            fix_contract=fix_contract,
+            config=config,  # type: ignore[arg-type]
+            reporter=lambda s: console.print(s, markup=False),
+        )
     except (ValueError, Exception) as exc:
         console.print(f"[red]Run failed:[/red] {exc}")
         sys.exit(1)
