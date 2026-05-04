@@ -42,7 +42,7 @@ def _extract_patch(docker: DockerManager, run_dir: Path) -> None:
     try:
         diff, _ = docker.exec("git diff HEAD")
     except (CommandError, OSError):
-        logger.warning("run_dir=%s failed to extract patch", run_dir.name)
+        logger.warning("run_dir=%s failed to extract patch", run_dir.name, exc_info=True)
         return
     if not diff.strip():
         logger.warning("run_dir=%s patch is empty after pass", run_dir.name)

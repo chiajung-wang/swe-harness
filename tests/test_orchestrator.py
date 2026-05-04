@@ -167,6 +167,7 @@ def test_run_no_patch_diff_on_fail(
 ) -> None:
     from swe_harness.agents.generator import StallDetected
     mock_generator.run.side_effect = StallDetected("no progress")
+    mock_docker.exec.side_effect = AssertionError("exec must not be called on fail path")
 
     orchestrator.run(
         issue_url="https://github.com/owner/repo/issues/1",
