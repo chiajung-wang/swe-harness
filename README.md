@@ -1,6 +1,6 @@
 # swe-harness
 
-> **Status: In development** — data models, budget accumulator, trace writer, Docker sandbox, agent base class, Generator agent, SQLite persistence, orchestrator, and CLI implemented; Reproducer/Evaluator agents and MCP server pending
+> **Status: In development** — data models, budget accumulator, trace writer, Docker sandbox, agent base class, Generator agent (with live console output and prompt caching), patch extraction, SQLite persistence, orchestrator, and CLI implemented; Reproducer/Evaluator agents and MCP server pending
 
 Multi-agent harness for autonomous Python bug-fixing. Takes a GitHub issue, produces a PR with a fix and regression test.
 

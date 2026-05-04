@@ -34,7 +34,7 @@ Canonical terms and resolved design decisions for `swe-harness`.
 | Docker lifecycle | Orchestrator manages; agents outside; one container per run | 0003 |
 | MCP backend split | jedi for definitions/usages; tree-sitter for test lookup; git for commits | 0004 |
 | MCP access | Reproducer + Generator only; Evaluator excluded | 0004 |
-| Prompt caching | Always cache system prompts + all repo files | 0005 |
+| Prompt caching | Cache initial user message (fix contract data); system prompt is ~80 tokens — below threshold | 0005 |
 | Budget enforcement | Orchestrator enforces; agents unaware | — |
 | Stall detection | 4 heuristics: 60s idle, identical tool×3, same file patch×5, Reproducer >20 calls | — |
 | Trace format | NDJSON, one entry per event | — |
@@ -86,5 +86,5 @@ Plain-text unified diff produced by `git diff HEAD` inside the Docker container 
 
 ### Trace entry (NDJSON)
 ```json
-{"ts": "", "run_id": "", "agent": "", "event": "tool_call|model_call|artifact_written", "model": "", "tool": "", "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cost_usd": 0.0, "duration_ms": 0}
+{"ts": "", "run_id": "", "agent": "", "event": "tool_call|model_call|artifact_written", "model": "", "tool": "", "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_creation_tokens": 0, "cost_usd": 0.0, "duration_ms": 0}
 ```
