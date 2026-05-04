@@ -83,13 +83,21 @@ Add after the `_repo_url_from_issue` function:
 def _extract_patch(docker: DockerManager, run_dir: Path) -> None:
     try:
         diff, _ = docker.exec("git diff HEAD")
-    except Exception:
+    except (CommandError, OSError):
         logger.warning("run_dir=%s failed to extract patch", run_dir.name)
         return
     if not diff.strip():
         logger.warning("run_dir=%s patch is empty after pass", run_dir.name)
         return
     (run_dir / "patch.diff").write_text(diff, encoding="utf-8")
+```
+
+- [ ] **Step 5.5: Update `test_run_happy_path` to configure `mock_docker.exec`**
+
+Without this, `_extract_patch` silently hits the `CommandError/OSError` fallback (MagicMock unpack fails → caught → warning logged). Add to `test_run_happy_path`:
+
+```python
+mock_docker.exec.return_value = ("--- a/src/module.py\n+++ b/src/module.py\n@@ -1 +1 @@\n-x\n+y\n", "")
 ```
 
 - [ ] **Step 6: Call `_extract_patch()` on pass in `run()`**

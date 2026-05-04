@@ -65,6 +65,10 @@ Canonical terms and resolved design decisions for `swe-harness`.
 }
 ```
 
+### `patch.diff`
+
+Plain-text unified diff produced by `git diff HEAD` inside the Docker container after a passing Generator run. Written to `runs/<run_id>/patch.diff`. Not written on fail or budget-exceeded. Empty-diff on pass is anomalous (logged as warning).
+
 ### `verdict.json`
 ```json
 {
