@@ -9,11 +9,17 @@ from swe_harness.models import TraceEntry
 from swe_harness.tracer import Tracer
 
 
-def _mock_response(input_tokens: int = 100, output_tokens: int = 50, cache_read: int | None = None) -> MagicMock:
+def _mock_response(
+    input_tokens: int = 100,
+    output_tokens: int = 50,
+    cache_read: int | None = None,
+    cache_creation: int | None = None,
+) -> MagicMock:
     usage = MagicMock()
     usage.input_tokens = input_tokens
     usage.output_tokens = output_tokens
     usage.cache_read_input_tokens = cache_read
+    usage.cache_creation_input_tokens = cache_creation
     msg = MagicMock()
     msg.usage = usage
     return msg
@@ -100,6 +106,19 @@ def test_call_cache_read_none_treated_as_zero(tmp_path: Path) -> None:
         (tmp_path / "run" / "trace.ndjson").read_text(encoding="utf-8").strip()
     )
     assert entry.cache_read_tokens == 0
+
+
+def test_call_logs_cache_creation_tokens(tmp_path: Path) -> None:
+    agent = _make_agent(tmp_path)
+    agent._client = MagicMock()
+    agent._client.messages.create.return_value = _mock_response(100, 50, cache_creation=800)
+
+    agent._call(system="s", messages=[])
+
+    entry = TraceEntry.model_validate_json(
+        (tmp_path / "run" / "trace.ndjson").read_text(encoding="utf-8").strip()
+    )
+    assert entry.cache_creation_tokens == 800
 
 
 def test_build_cache_block(tmp_path: Path) -> None:

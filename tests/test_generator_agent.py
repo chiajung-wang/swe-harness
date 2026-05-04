@@ -68,6 +68,7 @@ def _usage_mock(input_tokens: int = 10, output_tokens: int = 5) -> MagicMock:
     u.input_tokens = input_tokens
     u.output_tokens = output_tokens
     u.cache_read_input_tokens = None
+    u.cache_creation_input_tokens = None
     return u
 
 
@@ -226,6 +227,25 @@ def test_write_file_blocked_for_traversal_path(tmp_path: Path) -> None:
     gen.run()
 
     assert docker.exec.call_count == 1  # only repro check, no write
+
+
+def test_initial_user_message_has_cache_control(tmp_path: Path) -> None:
+    gen, docker, client = _make_generator(tmp_path)
+    client.messages.create.return_value = _model_response([_text_block()], "end_turn")
+    docker.exec.return_value = ("", "")  # repro passes
+
+    gen.run()
+
+    _, kwargs = client.messages.create.call_args_list[0]
+    messages = kwargs["messages"]
+    first_user = messages[0]
+    assert first_user["role"] == "user"
+    content = first_user["content"]
+    assert isinstance(content, list)
+    assert any(
+        block.get("cache_control") == {"type": "ephemeral"}
+        for block in content
+    )
 
 
 def test_stall_idle_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

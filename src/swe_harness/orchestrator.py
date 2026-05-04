@@ -102,6 +102,7 @@ def run(
             generator.run()
             verdict = "pass"
             reporter("◆ Repro passed — done")
+            _extract_patch(docker, run_dir)
         except (ToolCapExceeded, TimeoutExceeded, StallDetected) as exc:
             logger.warning("run=%s generator terminated: %s", run_id, exc)
             verdict = "fail"

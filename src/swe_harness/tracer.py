@@ -58,6 +58,9 @@ def entry_from_usage(
     cache_read: int = (
         usage.cache_read_input_tokens if usage.cache_read_input_tokens is not None else 0
     )
+    cache_creation: int = (
+        usage.cache_creation_input_tokens if usage.cache_creation_input_tokens is not None else 0
+    )
     return TraceEntry(
         ts=_now_iso(),
         run_id=run_id,
@@ -67,6 +70,7 @@ def entry_from_usage(
         input_tokens=usage.input_tokens,
         output_tokens=usage.output_tokens,
         cache_read_tokens=cache_read,
+        cache_creation_tokens=cache_creation,
         cost_usd=cost_usd,
         duration_ms=duration_ms,
     )
