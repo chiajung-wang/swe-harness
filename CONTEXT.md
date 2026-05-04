@@ -39,6 +39,13 @@ Canonical terms and resolved design decisions for `swe-harness`.
 | Stall detection | 4 heuristics: 60s idle, identical tool×3, same file patch×5, Reproducer >20 calls | — |
 | Trace format | NDJSON, one entry per event | — |
 | SQLite schema | Single `runs` table; per-call detail stays in trace files | — |
+| Reproducer model | Sonnet 4.6 — harder task than Generator (no pre-filled contract), quality gate for whole pipeline | 0006 |
+| Reproducer tools | `read_file`, `write_file` (tests/ blocked), `write_test` (tests/ only), `run_command`, `emit_contract` | 0007 |
+| Reproducer issue content | Orchestrator pre-fetches GitHub issue body, injects into cached initial message; no tool call needed | — |
+| Reproducer confidence | Model self-reports `high`/`medium`; system overrides to `low` on stall cap hit or test never confirmed failing | — |
+| Reproducer stall handling | At tool call 17 (cap=20), inject forced message to call `emit_contract` with best-effort fields; system sets `confidence="low"` regardless | — |
+| `emit_contract` ownership | Model supplies 6 fields (`failing_test`, `repro_command`, `expected_behavior`, `likely_affected_files`, `error_output`, `reproducer_confidence`); system fills `issue_url` + `repo_commit` | — |
+| `emit_contract` cap | Excluded from 20-call tool cap — completion action, not exploration | — |
 
 ## Artifact schemas (canonical)
 
