@@ -10,7 +10,7 @@ from typing import Literal
 from swe_harness.agents.generator import Generator, StallDetected, TimeoutExceeded, ToolCapExceeded
 from swe_harness.budget import Budget, BudgetExceeded
 from swe_harness.db import init_db, upsert_run
-from swe_harness.docker_manager import DockerManager
+from swe_harness.docker_manager import CommandError, DockerManager
 from swe_harness.models import FixContract, RunRecord
 from swe_harness.tracer import Tracer
 
@@ -36,6 +36,18 @@ def _repo_url_from_issue(issue_url: str) -> str:
     if match:
         return match.group(1)
     raise ValueError(f"Cannot derive repo URL from issue URL: {issue_url!r}")
+
+
+def _extract_patch(docker: DockerManager, run_dir: Path) -> None:
+    try:
+        diff, _ = docker.exec("git diff HEAD")
+    except (CommandError, OSError):
+        logger.warning("run_dir=%s failed to extract patch", run_dir.name)
+        return
+    if not diff.strip():
+        logger.warning("run_dir=%s patch is empty after pass", run_dir.name)
+        return
+    (run_dir / "patch.diff").write_text(diff, encoding="utf-8")
 
 
 def run(
@@ -81,6 +93,7 @@ def run(
         try:
             generator.run()
             verdict = "pass"
+            _extract_patch(docker, run_dir)
         except (ToolCapExceeded, TimeoutExceeded, StallDetected) as exc:
             logger.warning("run=%s generator terminated: %s", run_id, exc)
             verdict = "fail"
