@@ -9,19 +9,31 @@ from swe_harness.budget import Budget
 from swe_harness.models import TraceEntry
 from swe_harness.tracer import Tracer, entry_from_usage
 
-# Per-million-token pricing: (input, output, cache_read)
-_PRICING: dict[str, tuple[float, float, float]] = {
-    "claude-sonnet-4-6": (3.0, 15.0, 0.30),
-    "claude-haiku-4-5-20251001": (0.80, 4.0, 0.08),
-    "claude-opus-4-7": (15.0, 75.0, 1.50),
+# Per-million-token pricing: (input, output, cache_read, cache_write)
+# cache_write = 1.25 × input per Anthropic pricing
+_PRICING: dict[str, tuple[float, float, float, float]] = {
+    "claude-sonnet-4-6":         (3.0,  15.0, 0.30,  3.75),
+    "claude-haiku-4-5-20251001": (0.80,  4.0, 0.08,  1.00),
+    "claude-opus-4-7":           (15.0, 75.0, 1.50, 18.75),
 }
 
 _DEFAULT_MAX_TOKENS = 8192
 
 
-def _cost_usd(model: str, input_tokens: int, output_tokens: int, cache_read: int) -> float:
+def _cost_usd(
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cache_read: int,
+    cache_creation: int,
+) -> float:
     p = _PRICING.get(model, _PRICING["claude-sonnet-4-6"])
-    return (input_tokens * p[0] + output_tokens * p[1] + cache_read * p[2]) / 1_000_000
+    return (
+        input_tokens * p[0]
+        + output_tokens * p[1]
+        + cache_read * p[2]
+        + cache_creation * p[3]
+    ) / 1_000_000
 
 
 class AnthropicAgent:
@@ -74,7 +86,12 @@ class AnthropicAgent:
         cache_read = (
             usage.cache_read_input_tokens if usage.cache_read_input_tokens is not None else 0
         )
-        cost = _cost_usd(self._model, usage.input_tokens, usage.output_tokens, cache_read)
+        cache_creation = (
+            usage.cache_creation_input_tokens
+            if usage.cache_creation_input_tokens is not None
+            else 0
+        )
+        cost = _cost_usd(self._model, usage.input_tokens, usage.output_tokens, cache_read, cache_creation)
 
         # Trace before charging: the API call completed and tokens were consumed
         # by Anthropic, so the trace entry is valid even if budget.charge()
