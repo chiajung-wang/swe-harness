@@ -6,6 +6,7 @@ import anthropic
 from anthropic.types import Message, MessageParam, TextBlockParam, ToolUnionParam
 
 from swe_harness.budget import Budget
+from swe_harness.models import TraceEntry
 from swe_harness.tracer import Tracer, entry_from_usage
 
 # Per-million-token pricing: (input, output, cache_read)
@@ -50,8 +51,11 @@ class AnthropicAgent:
         system: str | list[TextBlockParam],
         messages: list[MessageParam],
         tools: list[ToolUnionParam] | None = None,
-    ) -> Message:
+    ) -> tuple[Message, TraceEntry]:
         """Call the Anthropic API, log a TraceEntry, and charge the budget.
+
+        Returns (response, entry) so callers can use token/cost data for live
+        reporting without duplicating price math.
 
         API errors propagate to the caller — no swallowing.
         """
@@ -75,16 +79,15 @@ class AnthropicAgent:
         # Trace before charging: the API call completed and tokens were consumed
         # by Anthropic, so the trace entry is valid even if budget.charge()
         # raises BudgetExceeded immediately after.
-        self._tracer.log(
-            entry_from_usage(
-                run_id=self._run_id,
-                agent=type(self).__name__,
-                model=self._model,
-                usage=usage,
-                cost_usd=cost,
-                duration_ms=duration_ms,
-            )
+        entry = entry_from_usage(
+            run_id=self._run_id,
+            agent=type(self).__name__,
+            model=self._model,
+            usage=usage,
+            cost_usd=cost,
+            duration_ms=duration_ms,
         )
+        self._tracer.log(entry)
         self._budget.charge(cost)
 
-        return response
+        return response, entry

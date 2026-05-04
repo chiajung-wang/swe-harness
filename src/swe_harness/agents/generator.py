@@ -5,6 +5,7 @@ import json
 import time
 from collections import deque
 from pathlib import Path, PurePosixPath
+from typing import Callable
 
 from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock, ToolUnionParam
 
@@ -89,6 +90,7 @@ class Generator(AnthropicAgent):
         docker: DockerManager,
         tracer: Tracer,
         budget: Budget,
+        reporter: Callable[[str], None] | None = None,
     ) -> None:
         super().__init__(
             model=_MODEL,
@@ -99,11 +101,13 @@ class Generator(AnthropicAgent):
         self._fix_contract = fix_contract
         self._run_dir = run_dir
         self._docker = docker
+        self._reporter = reporter or (lambda _: None)
 
     def run(self) -> None:
         """Run the agentic fix loop until repro passes or a cap is hit."""
         wall_start = time.monotonic()
         tool_call_count = 0
+        call_num = 0
         # Tracks the last N tool-call signatures for identical-call stall detection
         recent_call_keys: deque[str] = deque(maxlen=_STALL_CALL_CAP)
         # Tracks how many times each file has been patched
@@ -130,7 +134,12 @@ class Generator(AnthropicAgent):
             # Reset before the API call so slow repos don't falsely trigger
             # the idle check on the next iteration.
             last_tool_exec = time.monotonic()
-            response = self._call(system=system, messages=messages, tools=_TOOLS)
+            response, entry = self._call(system=system, messages=messages, tools=_TOOLS)
+            call_num += 1
+            self._reporter(
+                f"  [{call_num}] model call → {entry.input_tokens} in / {entry.output_tokens} out"
+                f"  ${entry.cost_usd:.4f}"
+            )
             messages.append({"role": "assistant", "content": response.content})
 
             tool_uses = [b for b in response.content if isinstance(b, ToolUseBlock)]
@@ -156,6 +165,7 @@ class Generator(AnthropicAgent):
                     )
 
                 result = self._dispatch_tool(tu.name, tu.input, patch_counts)
+                self._reporter(self._format_tool_line(tu.name, tu.input, result))
                 tool_results.append(
                     ToolResultBlockParam(
                         type="tool_result",
@@ -175,6 +185,28 @@ class Generator(AnthropicAgent):
     # ------------------------------------------------------------------
     # Tool dispatch
     # ------------------------------------------------------------------
+
+    def _format_tool_line(self, name: str, inputs: object, result: str) -> str:
+        assert isinstance(inputs, dict), f"expected dict inputs, got {type(inputs)}"
+        args: dict[str, object] = inputs
+        if name == "read_file":
+            path = args.get("path", "")
+            status = "✗" if result.startswith("Error") else "✓"
+            return f"      → read_file {path}  {status}"
+        if name == "write_file":
+            path = args.get("path", "")
+            status = "✓" if result.startswith("Written:") else "✗"
+            return f"      → write_file {path}  {status}"
+        if name == "run_command":
+            cmd = str(args.get("command", ""))
+            short = cmd[:50] + ("…" if len(cmd) > 50 else "")
+            if result.startswith("Exit "):
+                exit_str = result.split("\n")[0].rstrip(":")
+                exit_code = exit_str.lower()
+            else:
+                exit_code = "exit 0"
+            return f"      → run_command {short}   {exit_code}"
+        return f"      → {name}  ?"
 
     def _dispatch_tool(
         self,
