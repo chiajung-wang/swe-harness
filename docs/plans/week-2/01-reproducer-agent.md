@@ -37,15 +37,15 @@ Agentic loop that:
 
 ## Acceptance criteria
 
-- [ ] `Reproducer` accepts `(issue_url, repo_commit, issue_body, run_dir, docker, tracer, budget)`
-- [ ] Tools: `read_file`, `write_file` (tests/ blocked), `write_test` (tests/ only), `run_command`, `emit_contract`
-- [ ] `emit_contract` excluded from 20-call cap; triggers loop exit on Pydantic-valid input
-- [ ] System fills `issue_url` + `repo_commit` in emitted contract; model supplies other 6 fields
-- [ ] Forced inject at call 17; hard-terminate at call 20 with `confidence="low"` contract
-- [ ] System overrides `confidence="low"` when stall cap hit or test never confirmed failing
-- [ ] All API calls go through `_call()` → logged to tracer, charged to budget
-- [ ] `pytest` passes (unit tests with mocked docker/tracer/budget)
+- [x] `Reproducer` accepts `(issue_url, repo_commit, issue_body, run_dir, docker, tracer, budget)`
+- [x] Tools: `read_file`, `write_file` (tests/ blocked), `write_test` (tests/ only), `run_command`, `emit_contract`
+- [x] `emit_contract` excluded from 20-call cap; triggers loop exit on Pydantic-valid input
+- [x] System fills `issue_url` + `repo_commit` in emitted contract; model supplies other 6 fields
+- [x] Forced inject at call 17; hard-terminate at call 20 with `confidence="low"` contract
+- [x] System overrides `confidence="low"` when stall cap hit or test never confirmed failing
+- [x] All API calls go through `_call()` → logged to tracer, charged to budget
+- [x] `pytest` passes (unit tests with mocked docker/tracer/budget)
 
-## Blocked by
+## Status
 
-None — can start immediately.
+**Done.** PR #15. `src/swe_harness/agents/reproducer.py`, `tests/test_reproducer_agent.py` (11 tests).

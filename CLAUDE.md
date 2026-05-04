@@ -12,6 +12,7 @@
 - `src/swe_harness/docker_manager.py` — container lifecycle: start/exec/stop; shell-injection-safe; integration-tested
 - `src/swe_harness/agents/base.py` — `AnthropicAgent` base: Anthropic client, `_build_cache_block()`, instrumented `_call()` returns `tuple[Message, TraceEntry]` (logs `TraceEntry`, charges `Budget`); pricing includes cache-write rate (1.25× input); `cache_creation_tokens` tracked
 - `src/swe_harness/agents/generator.py` — `Generator` (Haiku 4.5): agentic loop with read/write/run tools, 50-call cap, 15-min timeout, stall detection, test-guard with traversal-safe path normalization; `ProgressReporter` callback for live output; `cache_control` on initial user message
+- `src/swe_harness/agents/reproducer.py` — `Reproducer` (Sonnet 4.6): agentic loop with read_file/write_file/write_test/run_command/emit_contract tools; 20-call cap; forced inject at call 17; `emit_contract` completion signal with Pydantic validation; system confidence override; `cache_control` on initial user message
 - `src/swe_harness/db.py` — `init_db()` creates SQLite `runs` table; `upsert_run(record)` inserts or replaces by `run_id`
 - `src/swe_harness/orchestrator.py` — `run(issue_url, fix_contract, config)`: creates `runs/<ts>-<slug>/`, starts Docker, runs Generator, writes `patch.diff` via `_extract_patch()` on pass, writes `RunRecord` to SQLite, tears down on all exit paths; catches `BudgetExceeded`; `ProgressReporter` for live console output
 - `src/swe_harness/cli.py` — `swe-harness run <issue-url> --fix-contract <path> [--config solo]` with Rich progress output
