@@ -43,6 +43,7 @@ def mock_generator() -> Iterator[MagicMock]:
 
 def test_run_happy_path(tmp_path: Path, mock_docker: MagicMock, mock_generator: MagicMock) -> None:
     mock_generator.run.return_value = None  # success, no exception
+    mock_docker.exec.return_value = ("--- a/src/module.py\n+++ b/src/module.py\n@@ -1 +1 @@\n-x\n+y\n", "")
 
     record = orchestrator.run(
         issue_url="https://github.com/owner/repo/issues/1",
@@ -111,6 +112,7 @@ def test_run_writes_sqlite_row(
     from sqlalchemy import create_engine, text
 
     mock_generator.run.return_value = None
+    mock_docker.exec.return_value = ("--- a/src/module.py\n+++ b/src/module.py\n@@ -1 +1 @@\n-x\n+y\n", "")
 
     orchestrator.run(
         issue_url="https://github.com/owner/repo/issues/1",
@@ -131,6 +133,7 @@ def test_run_trace_file_created(
     tmp_path: Path, mock_docker: MagicMock, mock_generator: MagicMock
 ) -> None:
     mock_generator.run.return_value = None
+    mock_docker.exec.return_value = ("--- a/src/module.py\n+++ b/src/module.py\n@@ -1 +1 @@\n-x\n+y\n", "")
 
     orchestrator.run(
         issue_url="https://github.com/owner/repo/issues/1",
@@ -140,6 +143,40 @@ def test_run_trace_file_created(
 
     trace_files = list(tmp_path.glob("*/trace.ndjson"))
     assert len(trace_files) == 1
+
+
+def test_run_writes_patch_diff_on_pass(
+    tmp_path: Path, mock_docker: MagicMock, mock_generator: MagicMock
+) -> None:
+    mock_generator.run.return_value = None
+    mock_docker.exec.return_value = ("--- a/src/swe_harness/budget.py\n+++ b\n@@ -38 +38 @@\n-    if self._spent > self.limit_usd:\n+    if self._spent >= self.limit_usd:\n", "")
+
+    orchestrator.run(
+        issue_url="https://github.com/owner/repo/issues/1",
+        fix_contract=_fix_contract(),
+        runs_dir=tmp_path,
+    )
+
+    patch_files = list(tmp_path.glob("*/patch.diff"))
+    assert len(patch_files) == 1
+    assert ">=" in patch_files[0].read_text()
+
+
+def test_run_no_patch_diff_on_fail(
+    tmp_path: Path, mock_docker: MagicMock, mock_generator: MagicMock
+) -> None:
+    from swe_harness.agents.generator import StallDetected
+    mock_generator.run.side_effect = StallDetected("no progress")
+    mock_docker.exec.side_effect = AssertionError("exec must not be called on fail path")
+
+    orchestrator.run(
+        issue_url="https://github.com/owner/repo/issues/1",
+        fix_contract=_fix_contract(),
+        runs_dir=tmp_path,
+    )
+
+    patch_files = list(tmp_path.glob("*/patch.diff"))
+    assert len(patch_files) == 0
 
 
 def test_repo_url_from_issue_invalid() -> None:

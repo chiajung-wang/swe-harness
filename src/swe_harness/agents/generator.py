@@ -7,7 +7,7 @@ from collections import deque
 from pathlib import Path, PurePosixPath
 from typing import Callable
 
-from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock, ToolUnionParam
+from anthropic.types import MessageParam, TextBlockParam, ToolResultBlockParam, ToolUseBlock, ToolUnionParam
 
 from swe_harness.agents.base import AnthropicAgent
 from swe_harness.budget import Budget
@@ -115,9 +115,18 @@ class Generator(AnthropicAgent):
         # Time of the last successful tool execution (for idle stall detection)
         last_tool_exec = time.monotonic()
 
-        system = [self._build_cache_block(self._build_system_prompt())]
+        system = self._build_system_prompt()
         messages: list[MessageParam] = [
-            {"role": "user", "content": self._build_initial_message()}
+            {
+                "role": "user",
+                "content": [
+                    TextBlockParam(
+                        type="text",
+                        text=self._build_initial_message(),
+                        cache_control={"type": "ephemeral"},
+                    )
+                ],
+            }
         ]
 
         while True:
